@@ -6,7 +6,7 @@ externals:
 
   Libs/LibClassicSwingTimerAPI:
     url: https://github.com/Ralgathor/LibClassicSwingTimerAPI
-    tag: v2.1.5
+    tag: 2.1.5
 
 ignore:
   - README.md
