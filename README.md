@@ -5,6 +5,7 @@ Based on DruidMacroHelper (Cata Classic) by Mylaerla-Everlook
 
 ## Known Issues
 - Currently bugs should exist, please report the bugs in the issues section with how to reproduce
+- Trying to figure out how to handle the Ace3 library when it breaks other popular addons that are not being updated
 
 --------------
 This addon aims to simplify consume/powershifting macros as much as possible,
