@@ -1,5 +1,9 @@
-# DruidMacroHelper (Cata Classic) by Mylaerla-Everlook
+# DruidMacroHelper-Epoch made for <a href="https://www.project-epoch.net/">Project Epoch</a>
+World of Warcraft Build 30300
 
+Based on DruidMacroHelper (Cata Classic) by Mylaerla-Everlook
+
+--------------
 This addon aims to simplify consume/powershifting macros as much as possible,
 making them more readable and massively reduce the character count.
 
@@ -18,9 +22,8 @@ And optionally
 **Energy dependend shift are removed and I will not reimplement it. Macros like that cross a line that may cause blizzard to lock down this option and I will therefore not support spreading those.**
 
 ## Download
-
-You can download the latest Version on CurseForge (manually or via the app):
-https://www.curseforge.com/wow/addons/druidmacrohelper
+- Keep your addons up to date using <a href="https://woblight.gitlab.io/overview/gitaddonsmanager/">GitAddonsManager</a>
+- Add https://github.com/TyThompson/DruidMacroHelper-Epoch.git to <a href="https://woblight.gitlab.io/overview/gitaddonsmanager/">GitAddonsManager</a>
 
 ## Examples:
 
