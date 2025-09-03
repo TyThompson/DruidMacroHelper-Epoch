@@ -1,6 +1,6 @@
 -- Get the name of a) this addon loaded seperately, or b) the addon that loaded this as an embedded library
 local loadedAddonName = ... 
-local MAJOR, MINOR = "LibClassicSwingTimerAPI", 29
+local MAJOR, MINOR = "LibClassicSwingTimerAPI", 31
 local lib = LibStub:NewLibrary(MAJOR, MINOR)
 if not lib then
 	return
@@ -19,7 +19,7 @@ local isClassic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
 local isBCC = WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC and LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_BURNING_CRUSADE
 local isWrath = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC and LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_WRATH_OF_THE_LICH_KING
 local isCata = WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC and LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CATACLYSM
-local isMoP = WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC and LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MISTS_OF_PANDARIA
+local isMists = WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC and LE_EXPANSION_MISTS_OF_PANDARIA == LE_EXPANSION_MISTS_OF_PANDARIA
 local isClassicOrBCCOrWrathOrCata = isClassic or isBCC or isWrath or isCata
 
 local reset_swing_spells = nil
@@ -173,10 +173,10 @@ function Unit:SwingEnd(hand)
 	self.callbacks:Fire("UNIT_SWING_TIMER_STOP", self.id, hand)
 	if (self.casting or self.channeling) and self.isAttacking and hand ~= "ranged" then
 		local now = GetTime()
-		if isRetail and hand == "mainhand" then		
+		if (isRetail or isMists) and hand == "mainhand" then		
 			self:SwingStart(hand, now, true)
 			self.callbacks:Fire("UNIT_SWING_TIMER_CLIPPED", self.id, hand)
-		elseif isClassicOrBCCOrWrathOrCata then
+		elseif isClassicOrBCCOrWrathOrCata or isMists then
 			self:SwingStart(hand, now, true)
 			self.callbacks:Fire("UNIT_SWING_TIMER_CLIPPED", self.id, hand)
 		end
@@ -349,6 +349,9 @@ end
 function lib:COMBAT_LOG_EVENT_UNFILTERED(_, ts, subEvent, _, sourceGUID, _, _, _, destGUID, _, _, _, amount, overkill, _, resisted, _, _, _, _, _, isOffHand)
 	local now = GetTime()
 	local unit = lib:getUnit(sourceGUID)
+	if not unit then
+		return
+	end
 	if (subEvent == "SWING_DAMAGE" or subEvent == "SWING_MISSED") and unit then
 		local isOffHand = isOffHand
 		if subEvent == "SWING_MISSED" then
@@ -397,7 +400,7 @@ function lib:COMBAT_LOG_EVENT_UNFILTERED(_, ts, subEvent, _, sourceGUID, _, _, _
 	elseif (subEvent == "SPELL_DAMAGE" or subEvent == "SPELL_MISSED") and unit then
 		local spell = amount
 		if reset_ranged_swing[spell] then
-			if isRetail then
+			if (isRetail or isMists) then
 				unit:SwingStart("mainhand", GetTime(), true)
 			else
 				unit:SwingStart("ranged", GetTime(), true)
@@ -414,12 +417,6 @@ function lib:COMBAT_LOG_EVENT_UNFILTERED(_, ts, subEvent, _, sourceGUID, _, _, _
 				end)
 			end
 		end
-	elseif unit and unit.class == "DRUID" and subEvent == "SPELL_CAST_SUCCESS" then
-		local spell = amount
-		if(prevent_swing_speed_update[spell]) then
-			unit.skipNextAttackSpeedUpdate = now
-			unit.skipNextAttackSpeedUpdateCount = 2
-		end
 	end
 end
 
@@ -432,14 +429,16 @@ function lib:UNIT_ATTACK_SPEED(_, unitGUID)
 	if
 		unit.skipNextAttackSpeedUpdate
 		and tonumber(unit.skipNextAttackSpeedUpdate)
-		and (now - unit.skipNextAttackSpeedUpdate) < 0.15
+		and (now - unit.skipNextAttackSpeedUpdate) < 0.04
 		and tonumber(unit.skipNextAttackSpeedUpdateCount)
 	then
 		unit.skipNextAttackSpeedUpdateCount = unit.skipNextAttackSpeedUpdateCount - 1
 		return
 	end
-
 	local mainSpeedNew, offSpeedNew = UnitAttackSpeed(unit.id)
+	if(unit.id == "target" and not unit.isPlayer) then
+		offSpeed = mainSpeedNew
+	end
 	offSpeedNew = offSpeedNew or 0
 	if mainSpeedNew > 0 and unit.mainSpeed > 0 and mainSpeedNew ~= unit.mainSpeed then
 		if unit.mainTimer then
@@ -554,7 +553,7 @@ function lib:UNIT_SPELLCAST_SUCCEEDED(_, unitType, _, spell)
 		end
 	end
 	if spell and ranged_swing[spell] then
-		if isRetail then		
+		if (isRetail or isMists) then		
 			unit:SwingStart("mainhand", now, false)
 		else
 			unit:SwingStart("ranged", now, false)
@@ -602,6 +601,14 @@ function lib:UNIT_SPELLCAST_SUCCEEDED(_, unitType, _, spell)
 				end
 			end
 		end)
+	end
+	if isMists and spell == 114089 then  -- Wind Lash main hand cast
+		unit.firstMainSwing = true
+		unit:SwingStart("mainhand", now, false)
+	end
+	if isMists and spell == 114093 then  -- Wind Lash off-hand cast
+		unit.firstOffSwing = true
+		unit:SwingStart("offhand", now, false)
 	end
 end
 
@@ -722,7 +729,7 @@ function lib:UNIT_SPELLCAST_FAILED_QUIET(_, unitType, _, spell)
 	end
 end
 
-frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+-- frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 frame:RegisterEvent("PLAYER_ENTER_COMBAT")
 frame:RegisterEvent("PLAYER_LEAVE_COMBAT")
@@ -730,23 +737,23 @@ frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("PLAYER_TARGET_CHANGED")
 frame:RegisterEvent("START_AUTOREPEAT_SPELL")
 frame:RegisterEvent("STOP_AUTOREPEAT_SPELL")
-frame:RegisterUnitEvent("UNIT_ATTACK_SPEED", "player", "target")
-frame:RegisterUnitEvent("UNIT_SPELLCAST_START", "player", "target")
-frame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "player", "target")
-frame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player", "target")
-frame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED_QUIET", "player")
-frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "target")
-frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player", "target")
-frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player", "target")
+-- frame:RegisterUnitEvent("UNIT_ATTACK_SPEED", "player", "target")
+-- frame:RegisterUnitEvent("UNIT_SPELLCAST_START", "player", "target")
+-- frame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "player", "target")
+-- frame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player", "target")
+-- frame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED_QUIET", "player")
+-- frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "target")
+-- frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player", "target")
+-- frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player", "target")
 frame:RegisterEvent("ADDON_LOADED")
 
-frame:SetScript("OnEvent", function(_, event, ...)
-	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-		lib[event](lib, event, CombatLogGetCurrentEventInfo())
-	else
-		lib[event](lib, event, ...)
-	end
-end)
+-- frame:SetScript("OnEvent", function(_, event, ...)
+-- 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+-- 		lib[event](lib, event, CombatLogGetCurrentEventInfo())
+-- 	else
+-- 		lib[event](lib, event, ...)
+-- 	end
+-- end)
 
 tooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
 
@@ -1290,10 +1297,9 @@ elseif isCata then
 
 	reset_ranged_swing = {
 	}
-
-elseif isMoP then
+elseif isMists then
 	reset_swing_spells = {
-		-- need to verify following for Mists
+		-- need to verify following
 		[16589] = true, -- Noggenfogger Elixir
 		[2645] = true, -- Ghost Wolf
 		[2764] = true, -- Throw
@@ -1307,7 +1313,6 @@ elseif isMoP then
 		[2908] = true, -- Soothe
 		[53563] = true, -- Beacon of Light
 		[64382] = true, -- Shattering Throw
-		[57755] = true, -- Heroic Throw
 		[5384] = true, -- Feign Death
 		[339] = true, -- Entangling Roots
 		[770] = true, -- Faerie Fire
@@ -1321,6 +1326,12 @@ elseif isMoP then
 		[5176] = true, -- Wrath
 		[51505] = true, -- Lava Burst
 		[51533] = true, -- Feral Spirit
+		[124682] = true, -- Enveloping Mist
+		[116670] = true, -- Vivify
+		[115072] = true, -- Expel Harm
+		[115450] = true, -- Detox
+		[115460] = true, -- Healing Sphere
+		[115315] = true, -- Summon Black Ox Statue
 	}
 
 	reset_swing_on_channel_stop_spells = {}
@@ -1330,10 +1341,11 @@ elseif isMoP then
 		[5487] = true, -- Bear Form
 	}
 
-	-- no next melee spells in Mists
-	next_melee_spells = {}
+	-- all next melee spells have been converted to instants in Cataclysm
+	next_melee_spells = {
+	}
 
-	-- need to verify these for Mists
+	-- need to verify
 	noreset_swing_spells = {
 		[23063] = true, -- Dense Dynamite
 		[4054] = true, -- Rough Dynamite
@@ -1366,22 +1378,30 @@ elseif isMoP then
 		[56641] = true, -- Steady Shot
 		[1464] = true, -- Slam
 		[16914] = true, -- Hurricane
-		-- for Mists: need to retest Drums of Panic 
-		--35474 Drums of Panic DO reset the swing timer in Cata, do not add
+		
+		[12051] = true, -- Evocation
+		[120360] = true, -- Barrage
+		[56641] = true, -- Steady Shot
+		[19434] = true, -- Aimed Shot
+		[113656] = true, -- Fists of Fury
+		[123986] = true, -- Chi Burst	
+		[107270] = true, -- Spinning Crane Kick
+		[119996] = true, -- Transcendence: Transfer
+		[115176] = true, -- Zen Meditation
 	}
 
-	-- need to verify for Mists
 	prevent_reset_swing_auras = {
 		[53817] = true, -- Maelstrom Weapon
 	}
 
 	pause_swing_spells = {
+		[1464] = true, -- Slam
 	}
 
 	ranged_swing = {
 		[75] = true, -- Auto Shot
-		-- [3018] = true, -- Shoot is no longer available
-		-- [2764] = true, -- Throw is now a 0.5s cast ability given to certain classes
+		[3018] = true, -- Shoot
+		[2764] = true, -- Throw
 		[5019] = true, -- Shoot Wand
 	}
 

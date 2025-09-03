@@ -4,10 +4,78 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.6] - 2023-11-20
+
+## [2.1.5] - 2025-07-07
 
 ### Changed
-* Added support for Cataclysm
+
+* Removed Heroic Throw from list of reset_swing_spells for Mists of Pandaria.
+ 
+## [2.1.4] - 2025-07-07
+
+### Added
+* Add version support for Mists of Pandaria.
+
+### Changed
+
+* Bump build version support of Retails.
+* Bump build version support of Classic.
+* Bump build version support of Cataclysm.
+
+## [2.1.3] - 2024-09-04
+
+### Changed
+* Improve first autoshot swing calculation.
+* Maelstrom Weapon in SoD P4 prevents swingtimer reset.
+* Bump build version support of Classic.
+
+## [2.1.2] - 2024-05-18
+
+### Fixed
+* Fix auto shot cast time calculation. 
+
+## [2.1.1] - 2024-05-17
+
+### Changed
+* Improve ranged swing timer accuracy for Classic version. Implemented cast time and retry logic of auto shot.
+
+### Fixed
+* Added missing UNIT_ATTACK_SPEED update for ranged.
+* Fix Autto Attack/Auto Shot interaction for Cataclysm version.
+
+## [2.1.0] - 2024-05-15
+
+### Added
+* Add WeakAuras EVENTS handler. Fire the lib events in Weakaura if the addon is loaded.
+
+## [2.0.10] - 2024-05-14
+
+### Fixed
+* Add Feral Spirit to the reset_swing_spells list for Cataclysm version.
+
+## [2.0.9] - 2024-05-14
+
+### Fixed
+* Add Lava Burst to the reset_swing_spells list for Cataclysm version.
+
+## [2.0.8] - 2024-05-13
+
+### Fixed
+* Fixed attack speed update logic for Paladin in Classic version.
+
+## [2.0.7] - 2024-05-13
+
+### Fixed
+* Fixed extra attacks logic. Extra attacks gain always reset swing timer. Removed skip next attack event logic to reflect current in game behavior.
+
+## [2.0.6] - 2024-05-13
+
+### Added
+* Add version support for Cataclysm.
+
+### Changed
+* Bump build version support of Retails.
+* Bump build version support of Classic.
 
 ## [2.0.5] - 2023-11-20
 
