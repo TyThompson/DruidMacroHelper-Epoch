@@ -1,10 +1,8 @@
-## Interface: 110007, 11507, 20504, 30400, 40401, 50500
-## Title: DruidMacroHelper
+## Interface: 30300
+## Title: DruidMacroHelper-Epoch
 ## Version: 1.4.0
-## Author: Mylaerla-Everlook
+## Author: Ty Thompson
 ## Notes: Helper-Functions for creating efficient druid macros
-## X-Curse-Project-ID: 515355
-## X-Wago-ID: R4N2yaGL
 ## DefaultState: enabled
 
 Libs\LibStub\LibStub.lua
@@ -23,4 +21,4 @@ Locale\ruRU.lua
 Locale\koKR.lua
 Locale\zhCN.lua
 
-DruidMacroHelper.lua
+DruidMacroHelper-Epoch.lua
