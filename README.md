@@ -3,6 +3,9 @@ World of Warcraft Build 30300
 
 Based on DruidMacroHelper (Cata Classic) by Mylaerla-Everlook
 
+## Known Issues
+- Currently bugs should exist, please report the bugs in the issues section with how to reproduce
+
 --------------
 This addon aims to simplify consume/powershifting macros as much as possible,
 making them more readable and massively reduce the character count.
